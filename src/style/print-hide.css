@@ -1,0 +1,84 @@
+/* 打印时隐藏 */
+
+@media print {
+    .l_left,
+    .l_right,
+    .top.bread-nav.footnote,
+    div#read-next,
+    div#post-ai,
+    div#related-posts,
+    div#comments,
+    section#license,
+    section#share,
+    #link-icon,
+    #expiration-reminder,
+    .print_hide,
+    #background-canvas,
+    footer {
+      display: none;
+    }
+    .md-text psw {
+      color: unset;
+      background: unset;
+      border: 3px dashed var(--block-border);
+    }
+    /* 隐藏锚点 */
+    .markdownIt-Anchor {
+      display: none; /* 隐藏原始链接内容 */
+    }
+    /* 修改背景和边框 */
+    .article.banner {
+      background: none;
+      border-bottom: 1px dashed var(--block-border);
+    }
+
+    /* 调整边框圆角和内边距 */
+    .banner,
+    .banner.top {
+      border-radius: 0;
+    }
+
+    .banner .bottom,
+    table {
+      padding: 0rem;
+    }
+
+    /* 取消grid布局 */
+    #start {
+      display: unset;
+    }
+    /* 调整字的上下边距 */
+    p {
+      margin: 0 !important;
+    }
+    /* 调整标题的上外边距 */
+    h1,h2,h3,h4,h5, h6 {
+      margin: 0 !important;
+    }
+    table {
+      overflow-x: hidden !important; /* 隐藏水平滚动条 */
+      /* white-space: nowrap; 禁止内容换行 */
+    }
+    .tag-plugin.grid[bg]>.cell {
+      padding: unset !important;
+    }
+    .l_body.story div.tag-plugin, .l_body.story p>img {
+      margin-top: unset !important;
+      margin-bottom: unset !important;
+    }
+    /* 限制图片高度 */
+    img {
+      max-height: 100vh;
+    }
+    .md-text {
+      max-width: 100%;
+      line-height:unset;
+    }
+    :root[data-theme=light] {
+      --text-p1: #1f1f1f;
+    }
+    li:not([class]) a:not([class]),p:not([class]) a:not([class]),table a:not([class]) {
+    padding-bottom: 0.1rem;
+    background: linear-gradient(0deg,var(--theme-link),var(--theme-link)) no-repeat left 100%/100% 1px !important;
+  }
+}

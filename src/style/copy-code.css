@@ -1,0 +1,94 @@
+/* 复制行代码动画 */
+
+/* from https://u.sb/ */
+.code>pre .line {
+  padding: 2px;
+  background: linear-gradient(90deg,#6BB41840,#6BB41840) 0 100%/0 100% no-repeat;
+}
+
+.code>pre .line:hover {
+	animation: forwards cs-animate-key-2-end, 1s .2s forwards cs-animate-key-2-start
+}
+
+.code>pre .line {
+	animation: .3s forwards cs-animate-key-2-start
+}
+
+.code>pre .line:not(:hover) {
+	animation: .3s forwards cs-animate-key-2-end
+}
+@keyframes cs-animate-key-2-start {
+	0% {
+		background-size: 0 100%
+	}
+
+	to {
+		background-size: 100% 100%
+	}
+}
+
+@keyframes cs-animate-key-2-end {
+	0% {
+		background-size: 100% 100%
+	}
+
+	to {
+		background-size: 0 100%
+	}
+}
+
+.code>pre .line.copyable {
+	cursor: pointer
+}
+
+.code>pre .line.copyable:after,
+.code>pre .line.copyable.copied:after {
+	white-space: nowrap;
+	text-align: center;
+	color: #042811;
+	opacity: 0;
+	background: #6BB41880;
+	border: 0;
+	border-radius: 0;
+	width: 0;
+	height: 1rem;
+	margin-left: 5px;
+	line-height: 1rem;
+	animation: .3s forwards cs-animate-key-3;
+	display: inline-block;
+	position: relative
+}
+
+
+.code>pre .line.copyable:after {
+	content: "点击复制行"
+}
+
+@keyframes cs-animate-key-3 {
+	0% {
+		opacity: 0;
+		width: 0
+	}
+
+	to {
+		opacity: 1;
+		width: 75px
+	}
+}
+
+.code>pre .line.copyable.copied:after {
+	content: "已复制";
+	animation: .3s forwards cs-animate-key-4
+}
+
+@keyframes cs-animate-key-4 {
+	0% {
+		opacity: 0;
+		width: 0
+	}
+
+	to {
+		opacity: 1;
+		width: 55px
+	}
+}

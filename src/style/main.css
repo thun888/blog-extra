@@ -1,0 +1,73 @@
+.old-message {
+    padding: 5px 10px;
+    font-size: 15px;
+    border: 1px solid #e2e2e2;
+    background-color: #eee;
+    border-left: 5px solid #ed8e13;
+    color: #333;
+    overflow: hidden;
+}
+.tag-plugin.timeline .body img[atk-emoticon] {
+  max-height: 40px;
+  display: initial;
+  margin: 0;
+}
+.tag-plugin.timeline .body img {
+  max-height: 200px;
+}
+
+.bread-nav div#page-words span.sep:before {
+  content: '|';
+}
+.bread-nav div#page-words span.updated {
+  visibility: hidden;
+}
+.bread-nav:hover div#page-words span.updated {
+  visibility: visible;
+}
+
+
+/* 文章内链接：为链接使用荧光笔下划线效果 */
+li:not([class]) a:not([class]),
+p:not([class]) a:not([class]),
+table a:not([class]) {
+  padding-bottom: 0.1rem;
+  background: linear-gradient(0, var(--theme-link-opa), var(--theme-link-opa)) no-repeat center bottom / 100% 40%;
+}
+
+/* 滚动条整体部分 */
+
+::-webkit-scrollbar {
+  width: .75rem;
+}
+/* 滚动条滑块 */
+::-webkit-scrollbar-thumb {
+  background-color: #e6e6e6;
+  border-radius: 6px;
+}
+/* 滚动条轨道 */
+::-webkit-scrollbar-track {
+  background-color: #f9fafb;
+}
+/* 悬停样式 */
+::-webkit-scrollbar-thumb:hover {
+  background: #cdcdcd; /* 悬停时滑块颜色 */
+}
+
+
+
+.ds-rss .content i.emoji {
+    font-style: normal;
+    margin-right: 2px;
+}
+
+/* livePhoto */
+.ds-livephoto {
+  /* display: inline-block; */
+  margin: 1rem auto !important;
+}
+
+/* 屏蔽背景右键 */
+.sitebg {
+    pointer-events: none;
+}

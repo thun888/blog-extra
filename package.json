@@ -1,0 +1,24 @@
+{
+  "name": "extra",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "npx webpack"
+  },
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "css-loader": "^7.1.4",
+    "css-minimizer-webpack-plugin": "^7.0.4",
+    "mini-css-extract-plugin": "^2.10.0",
+    "terser-webpack-plugin": "^5.3.16",
+    "webpack": "^5.105.2",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "@thun888/live-photo": "^1.0.4",
+    "hexo-math": "^5.0.0",
+    "simplex-noise": "^4.0.3",
+    "tippy.js": "^6.3.7"
+  }
+}
