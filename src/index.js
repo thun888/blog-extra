@@ -1,8 +1,7 @@
 import tippy from 'tippy.js';
 import { createNoise2D } from 'simplex-noise';
 import NProgress from 'nprogress';
-// 挂载到全局，方便在其他模块调用
-window.NProgress = NProgress;
+
 import 'flying-pages';
 import 'nprogress/nprogress.css';
 import 'tippy.js/dist/tippy.css';
@@ -42,8 +41,6 @@ function insertLinkIcons() {
     link.insertAdjacentHTML('beforeend', `<span style="white-space: nowrap;padding: 0px 5px 0 2px;" id="link-icon"><svg width=".7em"height=".7em"viewBox="0 0 21 21"xmlns="http://www.w3.org/2000/svg"><path d="m13 3l3.293 3.293l-7 7l1.414 1.414l7-7L21 11V3z"fill="currentColor"/><path d="M19 19H5V5h7l-2-2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2v-5l-2-2v7z"fill="currentColor"></svg></span>`);
   });
 }
-document.addEventListener('DOMContentLoaded', insertLinkIcons);
-document.addEventListener('pjax:complete', insertLinkIcons);
 
 
 // 插入字数统计
@@ -61,8 +58,6 @@ function updatePostStats() {
       }
   }
 }
-document.addEventListener('DOMContentLoaded', updatePostStats);
-document.addEventListener('pjax:complete', updatePostStats);
 
 
 function initImageOptimization() {
@@ -150,8 +145,6 @@ function initImageOptimization() {
   selectFastNode();
 }
 
-document.addEventListener('DOMContentLoaded', initImageOptimization);
-document.addEventListener('pjax:complete', initImageOptimization);
 
   // 看看哪个节点快
   function selectFastNode(force) {
@@ -263,8 +256,7 @@ function toggleDeleteMode() {
       document.removeEventListener('click', deleteElement, true);
     }
 }
-// 挂载到全局
-window.toggleDeleteMode = toggleDeleteMode;
+
 
 function deleteElement(event) {
   if (deleteMode && event.target !== document.body && !event.target.closest('.delmode-btn') && !event.target.closest('.float-panel')) {
@@ -417,7 +409,6 @@ function drawClouds(status) {
     });
 }
 
-window.drawClouds = drawClouds;
 
 function drawBackground(status, theme = "light") {
   const canvas = document.getElementById('background-canvas');
@@ -498,7 +489,6 @@ function drawBackground(status, theme = "light") {
   }
 }
 
-window.drawBackground = drawBackground;
 // 窗口尺寸变化时重绘
 // window.addEventListener('resize', () => {
 //   localStorage.removeItem('background-canvas-data');
@@ -585,7 +575,6 @@ function targetPageRerender() {
   }
   drawBackground(false, theme)
 }
-window.targetPageRerender = targetPageRerender;
 
 colorSchemeQuery.addEventListener('change', () => targetPageRerender());
 
@@ -659,10 +648,6 @@ function eggs() {
   return "One by one please";
 }
 
-// 挂载到全局
-window.whereegg = whereegg;
-window.egg = egg;
-window.eggs = eggs;
 
 // 历史记录
 // key
@@ -706,8 +691,6 @@ function clearPageHistory() {
 function activateTippy() {
   tippy('.annotated',{arrow: true,theme:"light-border"});
 }
-document.addEventListener('DOMContentLoaded', activateTippy);
-document.addEventListener('pjax:complete', activateTippy);
 
 // 性能遥测，不用
 // window.addEventListener("DOMContentLoaded", () => {
@@ -808,8 +791,10 @@ if (window.location.search.includes('atk_comment')) {
   });
 }
 // 适配Artalk懒加载时id定位
-if (window.location.hash.includes("atk-comment") || window.location.search.includes("atk_comment")) {
-  util.scrollComment();
+function scrollToComment() {
+  if (window.location.hash.includes("atk-comment") || window.location.search.includes("atk_comment")) {
+    util.scrollComment();
+  }
 }
 // 单行复制
 function initSingleLineCopy() {
@@ -838,11 +823,37 @@ function initSingleLineCopy() {
       })
     })
 }
-document.addEventListener('DOMContentLoaded', initSingleLineCopy);
-document.addEventListener('pjax:complete', initSingleLineCopy);
 
+// 函数挂载区域
+window.NProgress = NProgress;
+window.toggleDeleteMode = toggleDeleteMode;
+window.targetPageRerender = targetPageRerender;
+window.whereegg = whereegg;
+window.egg = egg;
+window.eggs = eggs;
+window.drawBackground = drawBackground;
+window.drawClouds = drawClouds;
+
+// 变量配置区域
 NProgress.configure({
     showSpinner: false,
     minimum: 0.1,
     trickleSpeed: 200
 });
+
+// window.CAP_CUSTOM_WASM_URL =  "https://capjs.hzchu.top/assets/cap_wasm.js";
+
+
+// 设置DOMContentLoaded区域
+document.addEventListener('DOMContentLoaded', activateTippy);
+document.addEventListener('DOMContentLoaded', initSingleLineCopy);
+document.addEventListener('DOMContentLoaded', initImageOptimization);
+document.addEventListener('DOMContentLoaded', updatePostStats);
+document.addEventListener('DOMContentLoaded', insertLinkIcons);
+document.addEventListener('DOMContentLoaded', scrollToComment); //只需要初次加载时
+// 设置pjax:complete区域
+document.addEventListener('pjax:complete', activateTippy);
+document.addEventListener('pjax:complete', initSingleLineCopy);
+document.addEventListener('pjax:complete', initImageOptimization);
+document.addEventListener('pjax:complete', updatePostStats);
+document.addEventListener('pjax:complete', insertLinkIcons);
