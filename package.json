@@ -17,7 +17,9 @@
   "dependencies": {
     "@popperjs/core": "^2.11.8",
     "@thun888/live-photo": "^1.0.4",
+    "flying-pages": "^2.0.6",
     "hexo-math": "^5.0.0",
+    "nprogress": "^0.2.0",
     "simplex-noise": "^4.0.3",
     "tippy.js": "^6.3.7"
   }

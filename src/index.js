@@ -1,5 +1,10 @@
 import tippy from 'tippy.js';
 import { createNoise2D } from 'simplex-noise';
+import NProgress from 'nprogress';
+// 挂载到全局，方便在其他模块调用
+window.NProgress = NProgress;
+import 'flying-pages';
+import 'nprogress/nprogress.css';
 import 'tippy.js/dist/tippy.css';
 // 默认已经有透明度动画了，不需要额外引入
 // import 'tippy.js/animations/scale.css';
@@ -835,3 +840,9 @@ function initSingleLineCopy() {
 }
 document.addEventListener('DOMContentLoaded', initSingleLineCopy);
 document.addEventListener('pjax:complete', initSingleLineCopy);
+
+NProgress.configure({
+    showSpinner: false,
+    minimum: 0.1,
+    trickleSpeed: 200
+});
