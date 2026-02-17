@@ -580,6 +580,7 @@ function targetPageRerender() {
   }
   drawBackground(false, theme)
 }
+window.targetPageRerender = targetPageRerender;
 
 colorSchemeQuery.addEventListener('change', () => targetPageRerender());
 
