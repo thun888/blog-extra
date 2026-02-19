@@ -52,10 +52,12 @@ function updatePostStats() {
     document.getElementById("all-post-words").innerHTML = allpostswords;
   }
   // 过期提醒
-  if (typeof upgrade_time_days !== 'undefined' && upgrade_time_days > 180) {
-      if (document.getElementById('expiration-reminder')) {
-        document.getElementById('expiration-reminder').innerHTML = `<div class="tag-plugin colorful note" color="orange"><div class="title"><strong>提醒</strong></div><div class="body"><p>本文最后更新于 ${upgrade_time_days} 天前，其中某些信息可能已经过时，请谨慎使用！<br>如果发现内容有误，请在评论区告知。</p></div></div>`;
-      }
+  let update_time = document.getElementById("updated-time")?.getAttribute("datetime");
+  if (update_time) {
+    let upgrade_time_days = Math.floor((new Date() - new Date(update_time)) / 1000 / 60 / 60 / 24);
+    if (upgrade_time_days > 180 && document.getElementById('expiration-reminder')) {
+      document.getElementById('expiration-reminder').innerHTML = `<div class="tag-plugin colorful note" color="orange"><div class="title"><strong>提醒</strong></div><div class="body"><p>本文最后更新于 ${upgrade_time_days} 天前，其中某些信息可能已经过时，请谨慎使用！<br>如果发现内容有误，请在评论区告知。</p></div></div>`;
+    }
   }
 }
 
