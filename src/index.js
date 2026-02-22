@@ -1,6 +1,7 @@
 import tippy from 'tippy.js';
 import { createNoise2D } from 'simplex-noise';
 import NProgress from 'nprogress';
+import { setConfig, getConfig } from './db-utils.js';
 
 import 'flying-pages';
 import 'nprogress/nprogress.css';
@@ -61,189 +62,142 @@ function updatePostStats() {
   }
 }
 
+  // 检测浏览器是否支持AVIF格式
+async function supportCheck(type, url) {
+  const result = await getConfig("image_opt_support_" + type);
+  if (result !== null && result !== undefined) {
+    // 如果结果存在，就直接返回
+    console.log(type, "support status loaded from DataBase:", result === "true");
+    return result === "true";
+  }
 
-function initImageOptimization() {
-    // 从页面中提取第一个AVIF图片链接
-    // function getFirstPictureUrl(type) {
-    //   const images = document.querySelectorAll('img');
-    //   for (let img of images) {
-    //     if (img.getAttribute("data-src") && img.getAttribute("data-src").includes('fmt=',type)) {
-    //       return img.getAttribute("data-src");
-    //     }
-    //   }
-    //   return null;
-    // }
-  
-    // 检测浏览器是否支持AVIF格式
-    function supportCheck(type, url) {
-      return new Promise(resolve => {
-        // 先从localStorage中获取结果
-        const result = localStorage.getItem("support_" + type);
-        if (result !== null) {
-          // 如果结果存在，就直接返回
-          console.log(type, "support status loaded from localStorage:", result === "true");
-          resolve(result === "true");
-        } else {
-          // 如果结果不存在，就进行检测
-          const image = new Image();
-          image.src = url;
-          image.onload = () => {
-            console.log(type, "supported");
-            // 将结果保存到localStorage
-            localStorage.setItem("support_" + type, "true");
-            resolve(true);
-          };
-          image.onerror = () => {
-            console.log(type, "not supported");
-            // 将结果保存到localStorage
-            localStorage.setItem("support_" + type, "false");
-            // 显示提示消息
-            hud.toast(`当前浏览器不支持使用${type}，已降级为使用其他格式`, 2500);
-            resolve(false);
-          };
-        }
-      });
-    }
-    
-  
-    // 替换图片URL中的avif为webp
-    function replacepicture(from, to) {
-      const images = document.querySelectorAll('img');
-      images.forEach(img => {
-        let attr = img.src.startsWith('data') ? 'data-src' : 'src';
-        if (img.getAttribute(attr) && img.getAttribute(attr).includes('fmt=' + from)) {
-          if (to == "") {
-            console.log("Replacing ", from, " with origin ext for image:", img.getAttribute(attr));
-            img.setAttribute(attr, img.getAttribute(attr).replace('fmt=' + from, ''));
-          } else {
-            console.log("Replacing ", from, " with ", to, " for image:", img.getAttribute(attr));
-            img.setAttribute(attr, img.getAttribute(attr).replace('fmt=' + from, 'fmt=' + to));
-          }
-        }
-      });
-    }
-    
+  // 如果结果不存在，就进行检测
+  return new Promise(resolve => {
+    const image = new Image();
+    image.src = url;
+    image.onload = async () => {
+      console.log(type, "supported");
+      await setConfig("image_opt_support_" + type, "true");
+      resolve(true);
+    };
+    image.onerror = async () => {
+      console.log(type, "not supported");
+      await setConfig("image_opt_support_" + type, "false");
+      // 显示提示消息
+      hud.toast(`当前浏览器不支持使用${type}，已降级为使用其他格式`, 2500);
+      resolve(false);
+    };
+  });
+}
+
+async function initImageOptimization() {
 
   const firstAvifUrl = "/img/check/status.avif"; // 获取第一个AVIF图片链接
-  // 使用第一个AVIF图片链接进行检测
-  supportCheck("AVIF", firstAvifUrl).then(supported => {
-    if (!supported) {
-      replacepicture("avif", "webp");
-      const firstWebpUrl = "/img/check/status.webp"; // 获取第一个WEBP图片链接
-      supportCheck("WEBP", firstWebpUrl).then(supported => {
-        if (!supported) {
-          // hud.toast("当前浏览器不支持使用webp，已降级为使用原始图片", 2500);
-          // replacepicture("webp","");
-          replacepicture("webp", "png");
-        } else {
-          console.log("Webp images will be used.");
-        }
-      });
-    } else {
-      console.log("AVIF images will be used.");
+  const firstWebpUrl = "/img/check/status.webp"; // 获取第一个WEBP图片链接
+  
+  try {
+    const avifSupported = await supportCheck("AVIF", firstAvifUrl);
+    if (!avifSupported) {
+      await setConfig('image_opt_best_format', 'webp');
+      hud.toast("当前浏览器不支持使用avif，已降级为使用webp", 2500);
+      
+      const webpSupported = await supportCheck("WEBP", firstWebpUrl);
+      if (!webpSupported) {
+        await setConfig('image_opt_best_format', 'png');
+        hud.toast("当前浏览器不支持使用webp，已降级为使用原始图片", 2500);
+      }
     }
-  });
+  } catch (error) {
+    console.error('[initImageOptimization] Error:', error);
+  }
 
-  selectFastNode();
+  await selectFastNode();
 }
 
 
-  // 看看哪个节点快
-  function selectFastNode(force) {
-    console.log('[ONEP,selectFastNode] Running...');
-    const selectdisabled = localStorage.getItem('onep.cdn.select.disabled');
-    if (selectdisabled) {
-      console.log('[ONEP,selectFastNode] Skipping due to select disabled.');
+// 看看哪个节点快
+async function selectFastNode(force) {
+  console.log('[ONEP,selectFastNode] Running...');
+  const selectdisabled = localStorage.getItem('onep.cdn.select.disabled');
+  if (selectdisabled) {
+    console.log('[ONEP,selectFastNode] Skipping due to select disabled.');
+    return;
+  }
+  const storedData = await getConfig('image_opt_fastest_node');
+  if (storedData) {
+    const data = JSON.parse(storedData);
+    const now = new Date();
+    if (data.link === null && now.getTime() - data.time < 5 * 60 * 1000 && !force) {
+      console.log('[ONEP,selectFastNode] Skipping due to recent failure to fetch nodes.');
+      return;
+    } else if (now.getTime() - data.time < 5 * 60 * 1000 && !force) {
       return;
     }
-    const storedData = localStorage.getItem('onep.cdn.nodelist');
-    if (storedData) {
-      const data = JSON.parse(storedData);
-      const now = new Date();
-      if (data.link === null && now.getTime() - data.time < 5 * 60 * 1000 && !force) {
-        console.log('[ONEP,selectFastNode] Skipping due to recent failure to fetch nodes.');
-        return;
-      } else if (now.getTime() - data.time < 5 * 60 * 1000 && !force) {
-        replaceImageSource(data.link);
-        return;
-      }
-    }
-  
-    const formData = new FormData();
-    formData.append('token', 'hzchu.top');
-  
-    fetch('https://onep.hzchu.top/_api/nodeslist', {
+  }
+
+  const formData = new FormData();
+  formData.append('token', 'hzchu.top');
+
+  try {
+    const response = await fetch('https://onep.hzchu.top/_api/nodeslist', {
       method: 'POST',
       body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.nodes && Object.keys(data.nodes).length > 0) {
-        const nodes = Object.values(data.nodes);
-        let fastestNode = null;
-        let fastestTime = Infinity;
+    });
+    const data = await response.json();
+    
+    if (data.nodes && Object.keys(data.nodes).length > 0) {
+      const nodes = Object.values(data.nodes);
+      let fastestNode = null;
+      let fastestTime = Infinity;
 
-        const promises = nodes.map(node => {
-          const startTime = performance.now();
-          // 添加随机查询参数以避免缓存
-          const url = `${node}/mount/watermask.png?cache_buster=${Math.random()}`;
-          return fetch(url)
-            .then(() => {
-              const endTime = performance.now();
-              const duration = endTime - startTime;
-              if (duration < fastestTime) {
-                fastestTime = duration;
-                fastestNode = node;
-              }
-            })
-            .catch(error => {
-              console.error('[ONEP,selectFastNode] Error pinging node:', node, error);
-            });
-        });
+      const promises = nodes.map(node => {
+        const startTime = performance.now();
+        // 添加随机查询参数以避免缓存
+        const url = `${node}/mount/watermask.png?cache_buster=${Math.random()}`;
+        return fetch(url)
+          .then(() => {
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            if (duration < fastestTime) {
+              fastestTime = duration;
+              fastestNode = node;
+            }
+          })
+          .catch(error => {
+            console.error('[ONEP,selectFastNode] Error pinging node:', node, error);
+          });
+      });
 
-        Promise.all(promises).then(() => {
-          if (fastestNode) {
-            replaceImageSource(fastestNode);
-            localStorage.setItem('onep.cdn.nodelist', JSON.stringify({
-              link: fastestNode,
-              time: new Date().getTime()
-            }));
-            console.log('[ONEP,selectFastNode] Selected fastest node:', fastestNode);
-          } else {
-            console.log('[ONEP,selectFastNode] No nodes responded successfully.');
-          }
-        });
-      } else {
-        console.log('[ONEP,selectFastNode] Failed to fetch nodes, will skip checks for the next 5 minutes.');
-        localStorage.setItem('onep.cdn.nodelist', JSON.stringify({
-          link: null,
+      await Promise.all(promises);
+      
+      if (fastestNode) {
+        // replaceImageSource(fastestNode);
+        await setConfig('image_opt_fastest_node', JSON.stringify({
+          link: fastestNode,
           time: new Date().getTime()
         }));
+        console.log('[ONEP,selectFastNode] Selected fastest node:', fastestNode);
+      } else {
+        console.log('[ONEP,selectFastNode] No nodes responded successfully.');
       }
-    })
-    .catch(error => {
-      console.error('[ONEP,selectFastNode] Error:', error);
-      localStorage.setItem('onep.cdn.nodelist', JSON.stringify({
+    } else {
+      console.log('[ONEP,selectFastNode] Failed to fetch nodes, will skip checks for the next 5 minutes.');
+      await setConfig('image_opt_fastest_node', JSON.stringify({
         link: null,
         time: new Date().getTime()
       }));
-    });
-    console.log('[ONEP,selectFastNode] Testing nodes...');
-    return true;
+    }
+  } catch (error) {
+    console.error('[ONEP,selectFastNode] Error:', error);
+    await setConfig('image_opt_fastest_node', JSON.stringify({
+      link: null,
+      time: new Date().getTime()
+    }));
   }
   
-  function replaceImageSource(newLink) {
-    const images = document.querySelectorAll('img');
-    images.forEach(img => {
-      if (img.getAttribute('src') && img.getAttribute('src').startsWith('https://onep.hzchu.top')) {
-        console.log("[ONEP,selectFastNode] Replacing ", img.getAttribute('src'), " with ", newLink);
-        img.setAttribute('src', img.getAttribute('src').replace('https://onep.hzchu.top', newLink));
-        if (img.getAttribute('data-src')) {
-          img.setAttribute('data-src', img.getAttribute('data-src').replace('https://onep.hzchu.top', newLink));
-        }
-      }
-    });
-  }
+  // console.log('[ONEP,selectFastNode] Testing nodes...');
+  return true;
+}
 
 // 删除模式
 let deleteMode = false;
@@ -835,7 +789,8 @@ window.egg = egg;
 window.eggs = eggs;
 window.drawBackground = drawBackground;
 window.drawClouds = drawClouds;
-
+window.selectFastNode = selectFastNode;
+window.clearPageHistory = clearPageHistory;
 // 变量配置区域
 NProgress.configure({
     showSpinner: false,
