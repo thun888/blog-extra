@@ -645,7 +645,13 @@ function clearPageHistory() {
 
 // 激活tippy
 function activateTippy() {
-  tippy('.annotated',{arrow: true,theme:"light-border"});
+  tippy('.annotated',{
+    arrow: true,
+    theme: "light-border",
+    touch: true,
+    trigger: "mouseenter focus click",
+    interactive: true
+  });
 }
 
 // 性能遥测，不用
