@@ -18,8 +18,7 @@ import './style/copy-code.css';
 import './style/print-hide.css';
 /* 运行时间 */
 // var now=new Date();function createtime(){var grt=new Date("07/8/2021 23:30:00");now.setTime(now.getTime()+250);days=(now-grt)/1000/60/60/24;dnum=Math.floor(days);hours=(now-grt)/1000/60/60-(24*dnum);hnum=Math.floor(hours);if(String(hnum).length==1){hnum="0"+hnum}minutes=(now-grt)/1000/60-(24*60*dnum)-(60*hnum);mnum=Math.floor(minutes);if(String(mnum).length==1){mnum="0"+mnum}seconds=(now-grt)/1000-(24*60*60*dnum)-(60*60*hnum)-(60*mnum);snum=Math.round(seconds);if(String(snum).length==1){snum="0"+snum}document.getElementById("timeDate").innerHTML="已运行&nbsp"+dnum+"&nbsp天";document.getElementById("times").innerHTML=hnum+"&nbsp小时&nbsp"+mnum+"&nbsp分&nbsp"+snum+"&nbsp秒"}setInterval("createtime()",250);
-//复制提醒
-document.addEventListener('copy',function(){hud.toast("复制成功，转载请注明出处", 2500);});
+
 
 // 插入link-icon
 function insertLinkIcons() {
@@ -238,8 +237,6 @@ function addCodeBlockScrollbar() {
     });
   });
 }
-document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
-document.addEventListener("pjax:complete", addCodeBlockScrollbar);
 
 // 背景生成
 
@@ -532,9 +529,8 @@ function targetPageRerender() {
   drawBackground(false, theme)
 }
 
-colorSchemeQuery.addEventListener('change', () => targetPageRerender());
 
-// 实现console.image函数 d.hzchu.top/k2Kty6
+// 实现console.image函数 https://zhuanlan.zhihu.com/p/698309500
 console.image = function (url, scale) {
   const img = new Image()
   img.crossOrigin = "anonymous"
@@ -814,9 +810,19 @@ document.addEventListener('DOMContentLoaded', initImageOptimization);
 document.addEventListener('DOMContentLoaded', updatePostStats);
 document.addEventListener('DOMContentLoaded', insertLinkIcons);
 document.addEventListener('DOMContentLoaded', scrollToComment); //只需要初次加载时
+document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
+
+
 // 设置pjax:complete区域
 document.addEventListener('pjax:complete', activateTippy);
 document.addEventListener('pjax:complete', initSingleLineCopy);
 document.addEventListener('pjax:complete', initImageOptimization);
 document.addEventListener('pjax:complete', updatePostStats);
 document.addEventListener('pjax:complete', insertLinkIcons);
+document.addEventListener("pjax:complete", addCodeBlockScrollbar);
+
+
+// 其他事件监听
+// 复制提醒
+document.addEventListener('copy',function(){hud.toast("复制成功，转载请注明出处", 2500);});
+colorSchemeQuery.addEventListener('change', () => targetPageRerender());
