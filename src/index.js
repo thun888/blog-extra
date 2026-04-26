@@ -45,12 +45,12 @@ function insertLinkIcons() {
 
 // 插入字数统计
 function updatePostStats() {
-  if (document.getElementById("all-posts-count")) {
-    document.getElementById("all-posts-count").innerHTML = allpostscount;
-  }
-  if (document.getElementById("all-post-words")) {
-    document.getElementById("all-post-words").innerHTML = allpostswords;
-  }
+  // if (document.getElementById("all-posts-count")) {
+  //   document.getElementById("all-posts-count").innerHTML = allpostscount;
+  // }
+  // if (document.getElementById("all-post-words")) {
+  //   document.getElementById("all-post-words").innerHTML = allpostswords;
+  // }
   // 过期提醒
   let update_time = document.getElementById("updated-time")?.getAttribute("datetime");
   if (update_time) {
