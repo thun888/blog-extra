@@ -804,13 +804,13 @@ NProgress.configure({
 
 
 // 设置DOMContentLoaded区域
-document.addEventListener('DOMContentLoaded', activateTippy);
-document.addEventListener('DOMContentLoaded', initSingleLineCopy);
-document.addEventListener('DOMContentLoaded', initImageOptimization);
-document.addEventListener('DOMContentLoaded', updatePostStats);
-document.addEventListener('DOMContentLoaded', insertLinkIcons);
+// document.addEventListener('DOMContentLoaded', activateTippy);
+// document.addEventListener('DOMContentLoaded', initSingleLineCopy);
+// document.addEventListener('DOMContentLoaded', initImageOptimization);
+// document.addEventListener('DOMContentLoaded', updatePostStats);
+// document.addEventListener('DOMContentLoaded', insertLinkIcons);
 document.addEventListener('DOMContentLoaded', scrollToComment); //只需要初次加载时
-document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
+// document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
 
 
 // 设置pjax:complete区域
