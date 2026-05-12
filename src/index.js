@@ -19,9 +19,13 @@ import './style/print-hide.css';
 /* 运行时间 */
 // var now=new Date();function createtime(){var grt=new Date("07/8/2021 23:30:00");now.setTime(now.getTime()+250);days=(now-grt)/1000/60/60/24;dnum=Math.floor(days);hours=(now-grt)/1000/60/60-(24*dnum);hnum=Math.floor(hours);if(String(hnum).length==1){hnum="0"+hnum}minutes=(now-grt)/1000/60-(24*60*dnum)-(60*hnum);mnum=Math.floor(minutes);if(String(mnum).length==1){mnum="0"+mnum}seconds=(now-grt)/1000-(24*60*60*dnum)-(60*60*hnum)-(60*mnum);snum=Math.round(seconds);if(String(snum).length==1){snum="0"+snum}document.getElementById("timeDate").innerHTML="已运行&nbsp"+dnum+"&nbsp天";document.getElementById("times").innerHTML=hnum+"&nbsp小时&nbsp"+mnum+"&nbsp分&nbsp"+snum+"&nbsp秒"}setInterval("createtime()",250);
 
+let lastInsertURL = null;
 
 // 插入link-icon
 function insertLinkIcons() {
+  // 避免重复插入
+  if (lastInsertURL === window.location.href) return;
+  lastInsertURL = window.location.href;
   const links = document.querySelectorAll('article.md-text.content p a, footer.page-footer.footnote a:not(div.sitemap a)');
   const skipSelectors = [
     '.tag-plugin.users-wrap',
@@ -808,7 +812,7 @@ NProgress.configure({
 // document.addEventListener('DOMContentLoaded', initSingleLineCopy);
 // document.addEventListener('DOMContentLoaded', initImageOptimization);
 // document.addEventListener('DOMContentLoaded', updatePostStats);
-// document.addEventListener('DOMContentLoaded', insertLinkIcons);
+document.addEventListener('DOMContentLoaded', insertLinkIcons);
 document.addEventListener('DOMContentLoaded', scrollToComment); //只需要初次加载时
 // document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
 
