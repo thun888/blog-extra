@@ -595,7 +595,7 @@ function egg() {
   }
 
   let randomValue = Math.ceil(Math.random() * 14);
-  let randomImageUrl = `https://emoticons.hzchu.top/emoticons/ye-lu-ye-shi-fu/${randomValue}.webp`;
+  let randomImageUrl = `https://emoticons.assets.hzchu.top/emoticons/ye-lu-ye-shi-fu/${randomValue}.webp`;
   console.image(randomImageUrl, 0.2);
   return "Who am I?";
 }
