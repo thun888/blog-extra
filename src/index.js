@@ -22,7 +22,7 @@ import './style/print-hide.css';
 
 // 插入link-icon
 function insertLinkIcons() {
-  const links = document.querySelectorAll('article.md-text.content p a, footer.page-footer.footnote a:not(div.sitemap a)');
+  const links = document.querySelectorAll('article.md-text.content a, footer.page-footer.footnote a:not(div.sitemap a)');
   const skipSelectors = [
     '.tag-plugin.users-wrap',
     '.tag-plugin.sites-wrap',
