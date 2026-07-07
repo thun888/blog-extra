@@ -19,13 +19,9 @@ import './style/print-hide.css';
 /* 运行时间 */
 // var now=new Date();function createtime(){var grt=new Date("07/8/2021 23:30:00");now.setTime(now.getTime()+250);days=(now-grt)/1000/60/60/24;dnum=Math.floor(days);hours=(now-grt)/1000/60/60-(24*dnum);hnum=Math.floor(hours);if(String(hnum).length==1){hnum="0"+hnum}minutes=(now-grt)/1000/60-(24*60*dnum)-(60*hnum);mnum=Math.floor(minutes);if(String(mnum).length==1){mnum="0"+mnum}seconds=(now-grt)/1000-(24*60*60*dnum)-(60*60*hnum)-(60*mnum);snum=Math.round(seconds);if(String(snum).length==1){snum="0"+snum}document.getElementById("timeDate").innerHTML="已运行&nbsp"+dnum+"&nbsp天";document.getElementById("times").innerHTML=hnum+"&nbsp小时&nbsp"+mnum+"&nbsp分&nbsp"+snum+"&nbsp秒"}setInterval("createtime()",250);
 
-let lastInsertURL = null;
 
 // 插入link-icon
 function insertLinkIcons() {
-  // 避免重复插入
-  if (lastInsertURL === window.location.href) return;
-  lastInsertURL = window.location.href;
   const links = document.querySelectorAll('article.md-text.content p a, footer.page-footer.footnote a:not(div.sitemap a)');
   const skipSelectors = [
     '.tag-plugin.users-wrap',
@@ -38,10 +34,13 @@ function insertLinkIcons() {
 
   links.forEach(link => {
     if (link.closest(skipSelectors)) return;
+    // 避免重复插入
+
+    if (link.querySelector('#link-icon')) return;
+
 
     const href = link.getAttribute('href');
     if (!href || (!href.startsWith('http') && !href.startsWith('/'))) return;
-
     link.insertAdjacentHTML('beforeend', `<span style="white-space: nowrap;padding: 0px 5px 0 2px;" id="link-icon"><svg width=".7em"height=".7em"viewBox="0 0 21 21"xmlns="http://www.w3.org/2000/svg"><path d="m13 3l3.293 3.293l-7 7l1.414 1.414l7-7L21 11V3z"fill="currentColor"/><path d="M19 19H5V5h7l-2-2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2v-5l-2-2v7z"fill="currentColor"></svg></span>`);
   });
 }
