@@ -45,6 +45,14 @@ module.exports = {
 								]
 						},
 						{
+								test: /.scss$/i,
+								use: [
+										MiniCssExtractPlugin.loader,
+										'css-loader',
+										'sass-loader'
+								]
+						},
+						{
 								test: /\.svg$/,
 								type: 'asset',
 								parser: {
