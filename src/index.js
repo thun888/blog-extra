@@ -366,8 +366,8 @@ function drawClouds(status) {
     });
 }
 
-
-function drawBackground(status, theme = "light") {
+// async here is Fire-and-Forget
+async function drawBackground(status, theme = "light") {
   const canvas = document.getElementById('background-canvas');
   // 背景不要右键菜单啊
   // 使用css实现
@@ -381,23 +381,23 @@ function drawBackground(status, theme = "light") {
   canvas.width  = W;
   canvas.height = H;
 
-  const keyW    = 'background-canvas-width';
-  const keyH    = 'background-canvas-height';
-  const keyData = 'background-canvas-data';
-  const keyCacheTime = 'background-canvas-cache-time';
-  const keyTheme = 'background-theme';
-  // 尝试读取缓存
-  const cachedW    = localStorage.getItem(keyW);
-  const cachedH    = localStorage.getItem(keyH);
-  const cachedImg = localStorage.getItem(keyData);
-  const cachedCacheTime = localStorage.getItem(keyCacheTime);
-  const cachedTheme = localStorage.getItem(keyTheme);
   const currentTime = new Date().getTime();
 
-  if (cachedImg && +cachedW === W && +cachedH === H && (currentTime - cachedCacheTime < 10 * 60 * 1000) && !status && cachedTheme) {
+  // 从 IndexedDB 并行读取缓存
+  const [cachedW, cachedH, cachedBlob, cachedCacheTime, cachedTheme] = await Promise.all([
+    getConfig('background-canvas-width'),
+    getConfig('background-canvas-height'),
+    getConfig('background-canvas-data'),
+    getConfig('background-canvas-cache-time'),
+    getConfig('background-theme')
+  ]);
+
+  if (cachedBlob && +cachedW === W && +cachedH === H && (currentTime - cachedCacheTime < 10 * 60 * 1000) && !status && cachedTheme) {
     // 如果缓存存在且尺寸一致，就直接绘制缓存图
     const img = new Image();
+    const objectUrl = URL.createObjectURL(cachedBlob);
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
       ctx.clearRect(0, 0, W, H);
       ctx.drawImage(img, 0, 0);
 
@@ -408,27 +408,33 @@ function drawBackground(status, theme = "light") {
         ctx.fillRect(0, 0, W, H);
         ctx.globalCompositeOperation = 'source-over';
 
-        // 缓存新主题的图片
-        try {
-          const dataURL = canvas.toDataURL('image/png');
-          localStorage.setItem(keyW, W);
-          localStorage.setItem(keyH, H);
-          localStorage.setItem(keyData, dataURL);
-          localStorage.setItem(keyCacheTime, currentTime);
-          localStorage.setItem(keyTheme, theme);
-          console.log('[Background] 背景主题色已更新并缓存');
-        } catch (err) {
-          console.warn('[Background] 缓存到 localStorage 失败:', err);
-        }
+        // toBlob 生成二进制数据，直接存入 IndexedDB
+        canvas.toBlob(blob => {
+          if (!blob) return;
+          Promise.all([
+            setConfig('background-canvas-width', W),
+            setConfig('background-canvas-height', H),
+            setConfig('background-canvas-data', blob),
+            setConfig('background-canvas-cache-time', currentTime),
+            setConfig('background-theme', theme)
+          ]).then(() => {
+            console.log('[Background] 背景主题色已更新并缓存');
+          }).catch(err => {
+            console.warn('[Background] 缓存到 IndexedDB 失败:', err);
+          });
+        }, 'image/png');
       } else {
         // console.log('[Background] 背景从缓存中加载');
       }
     };
-    img.src = cachedImg;
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+    img.src = objectUrl;
     return;
   }
 
-  console.log('[background] 开始重新绘制背景');
+  console.log('[Background] 开始重新绘制背景');
   const noise2D = new createNoise2D();
 
   // 设置参数
@@ -455,17 +461,21 @@ function drawBackground(status, theme = "light") {
     drawContour(ctx, cellSize, cols, rows, heightMap, level, theme);
   }
 
-  try {
-    const dataURL = canvas.toDataURL('image/png');
-    localStorage.setItem(keyW, W);
-    localStorage.setItem(keyH, H);
-    localStorage.setItem(keyData, dataURL);
-    localStorage.setItem(keyCacheTime, currentTime);
-    localStorage.setItem(keyTheme, theme);
-    console.log('[Background] 背景已缓存');
-  } catch (err) {
-    console.warn('[Background] 缓存到 localStorage 失败:', err);
-  }
+  // toBlob 生成二进制数据，直接存入 IndexedDB
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    Promise.all([
+      setConfig('background-canvas-width', W),
+      setConfig('background-canvas-height', H),
+      setConfig('background-canvas-data', blob),
+      setConfig('background-canvas-cache-time', currentTime),
+      setConfig('background-theme', theme)
+    ]).then(() => {
+      console.log('[Background] 背景已缓存');
+    }).catch(err => {
+      console.warn('[Background] 缓存到 IndexedDB 失败:', err);
+    });
+  }, 'image/png');
 }
 
 // 窗口尺寸变化时重绘
@@ -545,14 +555,14 @@ targetBackgroundRerender()
 const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 function targetBackgroundRerender() {
-  const currentTheme = document.documentElement.getAttribute('data-theme')
-  let theme = 'light'
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  let theme = 'light';
   if (currentTheme) {
-    theme = currentTheme
+    theme = currentTheme;
   } else {
-    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
-  drawBackground(false, theme)
+  drawBackground(false, theme);
 }
 
 
