@@ -394,13 +394,35 @@ function drawBackground(status, theme = "light") {
   const cachedTheme = localStorage.getItem(keyTheme);
   const currentTime = new Date().getTime();
 
-  if (cachedImg && +cachedW === W && +cachedH === H && (currentTime - cachedCacheTime < 10 * 60 * 1000) && !status && cachedTheme === theme) {
+  if (cachedImg && +cachedW === W && +cachedH === H && (currentTime - cachedCacheTime < 10 * 60 * 1000) && !status && cachedTheme) {
     // 如果缓存存在且尺寸一致，就直接绘制缓存图
     const img = new Image();
     img.onload = () => {
       ctx.clearRect(0, 0, W, H);
       ctx.drawImage(img, 0, 0);
-      // console.log('[Background] 背景从缓存中加载');
+
+      if (cachedTheme !== theme) {
+        // 仅主题不同，只改变颜色
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'source-over';
+
+        // 缓存新主题的图片
+        try {
+          const dataURL = canvas.toDataURL('image/png');
+          localStorage.setItem(keyW, W);
+          localStorage.setItem(keyH, H);
+          localStorage.setItem(keyData, dataURL);
+          localStorage.setItem(keyCacheTime, currentTime);
+          localStorage.setItem(keyTheme, theme);
+          console.log('[Background] 背景主题色已更新并缓存');
+        } catch (err) {
+          console.warn('[Background] 缓存到 localStorage 失败:', err);
+        }
+      } else {
+        // console.log('[Background] 背景从缓存中加载');
+      }
     };
     img.src = cachedImg;
     return;
@@ -517,17 +539,17 @@ function drawContour(ctx, cellSize, cols, rows, heightMap, level, theme) {
 
 
 drawClouds(false)
-targetPageRerender()
+targetBackgroundRerender()
 
 
 const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-function targetPageRerender() {
+function targetBackgroundRerender() {
   const currentTheme = document.documentElement.getAttribute('data-theme')
   let theme = 'light'
   if (currentTheme) {
     theme = currentTheme
-  }else{
+  } else {
     theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
   }
   drawBackground(false, theme)
@@ -789,7 +811,7 @@ function initSingleLineCopy() {
 // 函数挂载区域
 window.NProgress = NProgress;
 window.toggleDeleteMode = toggleDeleteMode;
-window.targetPageRerender = targetPageRerender;
+window.targetBackgroundRerender = targetBackgroundRerender;
 window.whereegg = whereegg;
 window.egg = egg;
 window.eggs = eggs;
@@ -829,4 +851,4 @@ document.addEventListener("pjax:complete", addCodeBlockScrollbar);
 // 其他事件监听
 // 复制提醒
 document.addEventListener('copy',function(){hud.toast("复制成功，转载请注明出处", 2500);});
-colorSchemeQuery.addEventListener('change', () => targetPageRerender());
+colorSchemeQuery.addEventListener('change', () => targetBackgroundRerender());
