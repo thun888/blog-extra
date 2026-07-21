@@ -1,3 +1,4 @@
+import { OverlayScrollbars } from 'overlayscrollbars';
 import tippy from 'tippy.js';
 import { createNoise2D } from 'simplex-noise';
 import NProgress from 'nprogress';
@@ -11,12 +12,14 @@ import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light-border.css';
 import 'hexo-math/dist/style.css';
 import '@thun888/live-photo/dist/main.css';
+import 'overlayscrollbars/overlayscrollbars.css';
 // 导入style下的所有css
 import './style/main.css';
 import './style/artalk.css';
 import './style/copy-code.css';
 import './style/print-hide.css';
 import './style/tg-memos.scss';
+import './style/OverlayScrollbars.css';
 /* 运行时间 */
 // var now=new Date();function createtime(){var grt=new Date("07/8/2021 23:30:00");now.setTime(now.getTime()+250);days=(now-grt)/1000/60/60/24;dnum=Math.floor(days);hours=(now-grt)/1000/60/60-(24*dnum);hnum=Math.floor(hours);if(String(hnum).length==1){hnum="0"+hnum}minutes=(now-grt)/1000/60-(24*60*dnum)-(60*hnum);mnum=Math.floor(minutes);if(String(mnum).length==1){mnum="0"+mnum}seconds=(now-grt)/1000-(24*60*60*dnum)-(60*60*hnum)-(60*mnum);snum=Math.round(seconds);if(String(snum).length==1){snum="0"+snum}document.getElementById("timeDate").innerHTML="已运行&nbsp"+dnum+"&nbsp天";document.getElementById("times").innerHTML=hnum+"&nbsp小时&nbsp"+mnum+"&nbsp分&nbsp"+snum+"&nbsp秒"}setInterval("createtime()",250);
 
@@ -839,6 +842,33 @@ NProgress.configure({
 // window.CAP_CUSTOM_WASM_URL =  "https://capjs.hzchu.top/assets/cap_wasm.js";
 
 
+// OverlayScrollbars 初始化
+let osInstance = null;
+
+function initOverlayScrollbars() {
+
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    return;
+  }
+
+  if (osInstance) {
+    osInstance.destroy();
+    osInstance = null;
+  }
+
+  osInstance = OverlayScrollbars(document.body, {
+    overflow: {
+      x: 'scroll',
+      y: 'scroll'
+    },
+    scrollbars: {
+      theme: 'os-theme-custom',
+      autoHide:'never',
+      // autoHideDelay: 2000,
+    }
+  });
+}
+
 // 设置DOMContentLoaded区域
 // document.addEventListener('DOMContentLoaded', activateTippy);
 // document.addEventListener('DOMContentLoaded', initSingleLineCopy);
@@ -846,6 +876,7 @@ NProgress.configure({
 // document.addEventListener('DOMContentLoaded', updatePostStats);
 document.addEventListener('DOMContentLoaded', insertLinkIcons);
 document.addEventListener('DOMContentLoaded', scrollToComment); //只需要初次加载时
+document.addEventListener('DOMContentLoaded', initOverlayScrollbars);
 // document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
 
 
@@ -856,6 +887,9 @@ document.addEventListener('pjax:complete', initImageOptimization);
 document.addEventListener('pjax:complete', updatePostStats);
 document.addEventListener('pjax:complete', insertLinkIcons);
 document.addEventListener("pjax:complete", addCodeBlockScrollbar);
+document.addEventListener('pjax:complete', () => {
+  if (osInstance) osInstance.update(true);
+});
 
 
 // 其他事件监听

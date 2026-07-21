@@ -22,6 +22,7 @@
     "flying-pages": "^2.0.6",
     "hexo-math": "^5.0.0",
     "nprogress": "^0.2.0",
+    "overlayscrollbars": "^2.16.0",
     "simplex-noise": "^4.0.3",
     "tippy.js": "^6.3.7"
   }

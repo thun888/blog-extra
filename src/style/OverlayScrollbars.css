@@ -1,0 +1,42 @@
+/* OverlayScrollbars 自定义主题（浅色） */
+:root {
+  --os-custom-handle-bg: rgba(0, 0, 0, 0.13);
+  --os-custom-handle-bg-hover: rgba(0, 0, 0, 0.22);
+  --os-custom-handle-bg-active: rgba(0, 0, 0, 0.33);
+}
+
+/* 深色模式 */
+:root[data-theme="dark"] {
+  --os-custom-handle-bg: rgba(255, 255, 255, 0.16);
+  --os-custom-handle-bg-hover: rgba(255, 255, 255, 0.28);
+  --os-custom-handle-bg-active: rgba(255, 255, 255, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --os-custom-handle-bg: rgba(255, 255, 255, 0.16);
+    --os-custom-handle-bg-hover: rgba(255, 255, 255, 0.28);
+    --os-custom-handle-bg-active: rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* 将自定义属性绑定到 OverlayScrollbars 主题 */
+.os-theme-custom {
+  --os-size: 12px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-axis: 2px;
+  --os-handle-border-radius: 6px;
+  --os-handle-bg: var(--os-custom-handle-bg);
+  --os-handle-bg-hover: var(--os-custom-handle-bg-hover);
+  --os-handle-bg-active: var(--os-custom-handle-bg-active);
+  --os-track-bg: transparent;
+  --os-track-bg-hover: transparent;
+  --os-track-bg-active: transparent;
+}
+/* stellar\source\css\_defines\const.styl $device-mobile-max */
+/* 备选判断 */
+@media (max-width: 667px) {
+  .os-scrollbar {
+    display: none;
+  }
+}
