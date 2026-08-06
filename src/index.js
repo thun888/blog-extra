@@ -33,7 +33,8 @@ function insertLinkIcons() {
     '.tag-plugin.ghcard',
     '.tag-plugin.link.dis-select',
     '.tag-plugin.colorful.note',
-    '.social-wrap.dis-select'
+    '.social-wrap.dis-select',
+    '.image'
   ].join(',');
 
   links.forEach(link => {
@@ -369,116 +370,140 @@ function drawClouds(status) {
     });
 }
 
+// 防重入锁：防止 drawBackground 并发执行导致背景重叠
+let drawBackgroundLock = null;
+
 // async here is Fire-and-Forget
 async function drawBackground(status, theme = "light") {
-  const canvas = document.getElementById('background-canvas');
-  // 背景不要右键菜单啊
-  // 使用css实现
-  // canvas.addEventListener('contextmenu', (e) => {
-  // e.preventDefault();
-  // });
-  const ctx = canvas.getContext('2d');
-
-  const W = window.innerWidth;
-  const H = window.innerHeight;
-  canvas.width  = W;
-  canvas.height = H;
-
-  const currentTime = new Date().getTime();
-
-  // 从 IndexedDB 并行读取缓存
-  const [cachedW, cachedH, cachedBlob, cachedCacheTime, cachedTheme] = await Promise.all([
-    getConfig('background-canvas-width'),
-    getConfig('background-canvas-height'),
-    getConfig('background-canvas-data'),
-    getConfig('background-canvas-cache-time'),
-    getConfig('background-theme')
-  ]);
-
-  if (cachedBlob && +cachedW === W && +cachedH === H && (currentTime - cachedCacheTime < 10 * 60 * 1000) && !status && cachedTheme) {
-    // 如果缓存存在且尺寸一致，就直接绘制缓存图
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(cachedBlob);
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      ctx.clearRect(0, 0, W, H);
-      ctx.drawImage(img, 0, 0);
-
-      if (cachedTheme !== theme) {
-        // 仅主题不同，只改变颜色
-        ctx.globalCompositeOperation = 'source-in';
-        ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
-        ctx.fillRect(0, 0, W, H);
-        ctx.globalCompositeOperation = 'source-over';
-
-        // toBlob 生成二进制数据，直接存入 IndexedDB
-        canvas.toBlob(blob => {
-          if (!blob) return;
-          Promise.all([
-            setConfig('background-canvas-width', W),
-            setConfig('background-canvas-height', H),
-            setConfig('background-canvas-data', blob),
-            setConfig('background-canvas-cache-time', currentTime),
-            setConfig('background-theme', theme)
-          ]).then(() => {
-            console.log('[Background] 背景主题色已更新并缓存');
-          }).catch(err => {
-            console.warn('[Background] 缓存到 IndexedDB 失败:', err);
-          });
-        }, 'image/png');
-      } else {
-        // console.log('[Background] 背景从缓存中加载');
-      }
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-    img.src = objectUrl;
+  // 如果已有正在执行的绘制，记录最新的请求参数，等当前绘制完成后再执行
+  if (drawBackgroundLock) {
+    drawBackgroundLock.pending = { status, theme };
     return;
   }
 
-  console.log('[Background] 开始重新绘制背景');
-  const noise2D = new createNoise2D();
+  const lock = { pending: null };
+  drawBackgroundLock = lock;
+  // 确保最后能释放锁
+  try {
+    const canvas = document.getElementById('background-canvas');
+    // 背景不要右键菜单啊
+    // 使用css实现
+    // canvas.addEventListener('contextmenu', (e) => {
+    // e.preventDefault();
+    // });
+    const ctx = canvas.getContext('2d');
 
-  // 设置参数
-  const cols  = W;
-  const rows  = H;
-  // const cellSize = Math.floor(window.devicePixelRatio);
-  const cellSize = 1;
-  const contourLevels = 10;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    canvas.width  = W;
+    canvas.height = H;
 
-  // 生成高度图
-  const heightMap = [];
-  for (let y = 0; y <= rows; y++) {
-    heightMap[y] = [];
-    for (let x = 0; x <= cols; x++) {
-      const nx = x / cols;
-      const ny = y / rows;
-      heightMap[y][x] = noise2D(nx * 3, ny * 3);
+    const currentTime = new Date().getTime();
+
+    // 从 IndexedDB 并行读取缓存
+    const [cachedW, cachedH, cachedBlob, cachedCacheTime, cachedTheme] = await Promise.all([
+      getConfig('background-canvas-width'),
+      getConfig('background-canvas-height'),
+      getConfig('background-canvas-data'),
+      getConfig('background-canvas-cache-time'),
+      getConfig('background-theme')
+    ]);
+
+    if (cachedBlob && +cachedW === W && +cachedH === H && (currentTime - cachedCacheTime < 10 * 60 * 1000) && !status && cachedTheme) {
+      // 如果缓存存在且尺寸一致，就直接绘制缓存图
+      await new Promise((resolve) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(cachedBlob);
+        img.src = objectUrl;
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          ctx.clearRect(0, 0, W, H);
+          ctx.drawImage(img, 0, 0);
+
+          if (cachedTheme !== theme) {
+            // 仅主题不同，只改变颜色
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            ctx.globalCompositeOperation = 'source-over';
+
+            // toBlob 生成二进制数据，直接存入 IndexedDB
+            canvas.toBlob(blob => {
+              if (!blob) return;
+              Promise.all([
+                setConfig('background-canvas-width', W),
+                setConfig('background-canvas-height', H),
+                setConfig('background-canvas-data', blob),
+                setConfig('background-canvas-cache-time', currentTime),
+                setConfig('background-theme', theme)
+              ]).then(() => {
+                console.log('[Background] 背景主题色已更新并缓存');
+              }).catch(err => {
+                console.warn('[Background] 缓存到 IndexedDB 失败:', err);
+              });
+            }, 'image/png');
+          } else {
+            // console.log('[Background] 背景从缓存中加载');
+          }
+          resolve();
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+      });
+      return;
+    }
+
+    console.log('[Background] 开始重新绘制背景');
+    const noise2D = new createNoise2D();
+
+    // 设置参数
+    const cols  = W;
+    const rows  = H;
+    // const cellSize = Math.floor(window.devicePixelRatio);
+    const cellSize = 1;
+    const contourLevels = 10;
+
+    // 生成高度图
+    const heightMap = [];
+    for (let y = 0; y <= rows; y++) {
+      heightMap[y] = [];
+      for (let x = 0; x <= cols; x++) {
+        const nx = x / cols;
+        const ny = y / rows;
+        heightMap[y][x] = noise2D(nx * 3, ny * 3);
+      }
+    }
+
+    // 绘制多层等高线
+    for (let i = 0; i < contourLevels; i++) {
+      const level = -1 + (2 * i) / contourLevels;
+      drawContour(ctx, cellSize, cols, rows, heightMap, level, theme);
+    }
+
+    // toBlob 生成二进制数据，直接存入 IndexedDB
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      Promise.all([
+        setConfig('background-canvas-width', W),
+        setConfig('background-canvas-height', H),
+        setConfig('background-canvas-data', blob),
+        setConfig('background-canvas-cache-time', currentTime),
+        setConfig('background-theme', theme)
+      ]).then(() => {
+        console.log('[Background] 背景已缓存');
+      }).catch(err => {
+        console.warn('[Background] 缓存到 IndexedDB 失败:', err);
+      });
+    }, 'image/png');
+  } finally {
+    // 释放锁，如果期间有新请求，用最新参数再绘制一次
+    drawBackgroundLock = null;
+    if (lock.pending) {
+      drawBackground(lock.pending.status, lock.pending.theme);
     }
   }
-
-  // 绘制多层等高线
-  for (let i = 0; i < contourLevels; i++) {
-    const level = -1 + (2 * i) / contourLevels;
-    drawContour(ctx, cellSize, cols, rows, heightMap, level, theme);
-  }
-
-  // toBlob 生成二进制数据，直接存入 IndexedDB
-  canvas.toBlob(blob => {
-    if (!blob) return;
-    Promise.all([
-      setConfig('background-canvas-width', W),
-      setConfig('background-canvas-height', H),
-      setConfig('background-canvas-data', blob),
-      setConfig('background-canvas-cache-time', currentTime),
-      setConfig('background-theme', theme)
-    ]).then(() => {
-      console.log('[Background] 背景已缓存');
-    }).catch(err => {
-      console.warn('[Background] 缓存到 IndexedDB 失败:', err);
-    });
-  }, 'image/png');
 }
 
 // 窗口尺寸变化时重绘
@@ -870,14 +895,14 @@ function initOverlayScrollbars() {
 }
 
 // 设置DOMContentLoaded区域
-// document.addEventListener('DOMContentLoaded', activateTippy);
-// document.addEventListener('DOMContentLoaded', initSingleLineCopy);
+document.addEventListener('DOMContentLoaded', activateTippy);
+document.addEventListener('DOMContentLoaded', initSingleLineCopy);
 // document.addEventListener('DOMContentLoaded', initImageOptimization);
-// document.addEventListener('DOMContentLoaded', updatePostStats);
+document.addEventListener('DOMContentLoaded', updatePostStats);
 document.addEventListener('DOMContentLoaded', insertLinkIcons);
 document.addEventListener('DOMContentLoaded', scrollToComment); //只需要初次加载时
 document.addEventListener('DOMContentLoaded', initOverlayScrollbars);
-// document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
+document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
 
 
 // 设置pjax:complete区域
