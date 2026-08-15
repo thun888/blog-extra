@@ -1,6 +1,5 @@
 import { OverlayScrollbars } from 'overlayscrollbars';
 import { createNoise2D } from 'simplex-noise';
-import NProgress from 'nprogress';
 import { setConfig, getConfig } from './db-utils.js';
 
 import 'flying-pages';
@@ -684,7 +683,6 @@ function initSingleLineCopy() {
 }
 
 // 函数挂载区域
-window.NProgress = NProgress;
 window.toggleDeleteMode = toggleDeleteMode;
 window.targetBackgroundRerender = targetBackgroundRerender;
 window.whereegg = whereegg;
@@ -692,14 +690,9 @@ window.egg = egg;
 window.eggs = eggs;
 window.drawBackground = drawBackground;
 window.drawClouds = drawClouds;
-window.selectFastNode = selectFastNode;
 window.clearPageHistory = clearPageHistory;
 // 变量配置区域
-NProgress.configure({
-    showSpinner: false,
-    minimum: 0.1,
-    trickleSpeed: 200
-});
+// ...
 
 // window.CAP_CUSTOM_WASM_URL =  "https://capjs.hzchu.top/assets/cap_wasm.js";
 
