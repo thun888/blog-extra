@@ -1,15 +1,12 @@
 import { OverlayScrollbars } from 'overlayscrollbars';
-import tippy from 'tippy.js';
 import { createNoise2D } from 'simplex-noise';
 import NProgress from 'nprogress';
 import { setConfig, getConfig } from './db-utils.js';
 
 import 'flying-pages';
 import 'nprogress/nprogress.css';
-import 'tippy.js/dist/tippy.css';
 // 默认已经有透明度动画了，不需要额外引入
 // import 'tippy.js/animations/scale.css';
-import 'tippy.js/themes/light-border.css';
 import 'hexo-math/dist/style.css';
 import '@thun888/live-photo/dist/main.css';
 import 'overlayscrollbars/overlayscrollbars.css';
@@ -51,160 +48,6 @@ function insertLinkIcons() {
 }
 
 
-// 插入字数统计
-function updatePostStats() {
-  // if (document.getElementById("all-posts-count")) {
-  //   document.getElementById("all-posts-count").innerHTML = allpostscount;
-  // }
-  // if (document.getElementById("all-post-words")) {
-  //   document.getElementById("all-post-words").innerHTML = allpostswords;
-  // }
-  // 过期提醒
-  let update_time = document.getElementById("updated-time")?.getAttribute("datetime");
-  if (update_time) {
-    let upgrade_time_days = Math.floor((new Date() - new Date(update_time)) / 1000 / 60 / 60 / 24);
-    if (upgrade_time_days > 180 && document.getElementById('expiration-reminder')) {
-      document.getElementById('expiration-reminder').innerHTML = `<div class="tag-plugin colorful note" color="orange"><div class="title"><strong>提醒</strong></div><div class="body"><p>本文最后更新于 ${upgrade_time_days} 天前，其中某些信息可能已经过时，请谨慎使用！<br>如果发现内容有误，请在评论区告知。</p></div></div>`;
-    }
-  }
-}
-
-  // 检测浏览器是否支持AVIF格式
-async function supportCheck(type, url) {
-  const result = await getConfig("image_opt_support_" + type);
-  if (result !== null && result !== undefined) {
-    // 如果结果存在，就直接返回
-    console.log(type, "support status loaded from DataBase:", result === "true");
-    return result === "true";
-  }
-
-  // 如果结果不存在，就进行检测
-  return new Promise(resolve => {
-    const image = new Image();
-    image.src = url;
-    image.onload = async () => {
-      console.log(type, "supported");
-      await setConfig("image_opt_support_" + type, "true");
-      resolve(true);
-    };
-    image.onerror = async () => {
-      console.log(type, "not supported");
-      await setConfig("image_opt_support_" + type, "false");
-      // 显示提示消息
-      hud.toast(`当前浏览器不支持使用${type}，已降级为使用其他格式`, 2500);
-      resolve(false);
-    };
-  });
-}
-
-async function initImageOptimization() {
-
-  const firstAvifUrl = "/img/check/status.avif"; // 获取第一个AVIF图片链接
-  const firstWebpUrl = "/img/check/status.webp"; // 获取第一个WEBP图片链接
-  
-  try {
-    const avifSupported = await supportCheck("AVIF", firstAvifUrl);
-    if (!avifSupported) {
-      await setConfig('image_opt_best_format', 'webp');
-      hud.toast("当前浏览器不支持使用avif，已降级为使用webp", 2500);
-      
-      const webpSupported = await supportCheck("WEBP", firstWebpUrl);
-      if (!webpSupported) {
-        await setConfig('image_opt_best_format', 'png');
-        hud.toast("当前浏览器不支持使用webp，已降级为使用原始图片", 2500);
-      }
-    }
-  } catch (error) {
-    console.error('[initImageOptimization] Error:', error);
-  }
-
-  await selectFastNode();
-}
-
-
-// 看看哪个节点快
-async function selectFastNode(force) {
-  console.log('[ONEP,selectFastNode] Running...');
-  const selectdisabled = localStorage.getItem('onep.cdn.select.disabled');
-  if (selectdisabled) {
-    console.log('[ONEP,selectFastNode] Skipping due to select disabled.');
-    return;
-  }
-  const storedData = await getConfig('image_opt_fastest_node');
-  if (storedData) {
-    const data = JSON.parse(storedData);
-    const now = new Date();
-    if (data.link === null && now.getTime() - data.time < 5 * 60 * 1000 && !force) {
-      console.log('[ONEP,selectFastNode] Skipping due to recent failure to fetch nodes.');
-      return;
-    } else if (now.getTime() - data.time < 5 * 60 * 1000 && !force) {
-      return;
-    }
-  }
-
-  const formData = new FormData();
-  formData.append('token', 'hzchu.top');
-
-  try {
-    const response = await fetch('https://onep.hzchu.top/_api/nodeslist', {
-      method: 'POST',
-      body: formData
-    });
-    const data = await response.json();
-    
-    if (data.nodes && Object.keys(data.nodes).length > 0) {
-      const nodes = Object.values(data.nodes);
-      let fastestNode = null;
-      let fastestTime = Infinity;
-
-      const promises = nodes.map(node => {
-        const startTime = performance.now();
-        // 添加随机查询参数以避免缓存
-        const url = `${node}/mount/watermask.png?cache_buster=${Math.random()}`;
-        return fetch(url)
-          .then(() => {
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            if (duration < fastestTime) {
-              fastestTime = duration;
-              fastestNode = node;
-            }
-          })
-          .catch(error => {
-            console.error('[ONEP,selectFastNode] Error pinging node:', node, error);
-          });
-      });
-
-      await Promise.all(promises);
-      
-      if (fastestNode) {
-        // replaceImageSource(fastestNode);
-        await setConfig('image_opt_fastest_node', JSON.stringify({
-          link: fastestNode,
-          time: new Date().getTime()
-        }));
-        console.log('[ONEP,selectFastNode] Selected fastest node:', fastestNode);
-      } else {
-        console.log('[ONEP,selectFastNode] No nodes responded successfully.');
-      }
-    } else {
-      console.log('[ONEP,selectFastNode] Failed to fetch nodes, will skip checks for the next 5 minutes.');
-      await setConfig('image_opt_fastest_node', JSON.stringify({
-        link: null,
-        time: new Date().getTime()
-      }));
-    }
-  } catch (error) {
-    console.error('[ONEP,selectFastNode] Error:', error);
-    await setConfig('image_opt_fastest_node', JSON.stringify({
-      link: null,
-      time: new Date().getTime()
-    }));
-  }
-  
-  // console.log('[ONEP,selectFastNode] Testing nodes...');
-  return true;
-}
 
 // 删除模式
 let deleteMode = false;
@@ -704,15 +547,15 @@ function clearPageHistory() {
 }
 
 // 激活tippy
-function activateTippy() {
-  tippy('.annotated',{
-    arrow: true,
-    theme: "light-border",
-    touch: true,
-    trigger: "mouseenter focus click",
-    interactive: true
-  });
-}
+// function activateTippy() {
+//   tippy('.annotated',{
+//     arrow: true,
+//     theme: "light-border",
+//     touch: true,
+//     trigger: "mouseenter focus click",
+//     interactive: true
+//   });
+// }
 
 // 性能遥测，不用
 // window.addEventListener("DOMContentLoaded", () => {
@@ -812,12 +655,6 @@ if (window.location.search.includes('atk_comment')) {
     });
   });
 }
-// 适配Artalk懒加载时id定位
-function scrollToComment() {
-  if (window.location.hash.includes("atk-comment") || window.location.search.includes("atk_comment")) {
-    util.scrollComment();
-  }
-}
 // 单行复制
 function initSingleLineCopy() {
   document.querySelectorAll('figure.highlight td.code pre span.line')
@@ -895,26 +732,10 @@ function initOverlayScrollbars() {
 }
 
 // 设置DOMContentLoaded区域
-document.addEventListener('DOMContentLoaded', activateTippy);
 document.addEventListener('DOMContentLoaded', initSingleLineCopy);
-// document.addEventListener('DOMContentLoaded', initImageOptimization);
-document.addEventListener('DOMContentLoaded', updatePostStats);
 document.addEventListener('DOMContentLoaded', insertLinkIcons);
-document.addEventListener('DOMContentLoaded', scrollToComment); //只需要初次加载时
 document.addEventListener('DOMContentLoaded', initOverlayScrollbars);
 document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
-
-
-// 设置pjax:complete区域
-document.addEventListener('pjax:complete', activateTippy);
-document.addEventListener('pjax:complete', initSingleLineCopy);
-document.addEventListener('pjax:complete', initImageOptimization);
-document.addEventListener('pjax:complete', updatePostStats);
-document.addEventListener('pjax:complete', insertLinkIcons);
-document.addEventListener("pjax:complete", addCodeBlockScrollbar);
-document.addEventListener('pjax:complete', () => {
-  if (osInstance) osInstance.update(true);
-});
 
 
 // 其他事件监听
