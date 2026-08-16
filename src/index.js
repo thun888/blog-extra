@@ -215,6 +215,26 @@ function drawClouds(status) {
 // 防重入锁：防止 drawBackground 并发执行导致背景重叠
 let drawBackgroundLock = null;
 
+// 导出画布为 PNG 并写入 IndexedDB。
+// 必须在锁内 await 完成：否则释放锁后，下一次绘制会先清空/重绘画布，
+// toBlob 异步快照就会捕获到空白或错误内容（旧逻辑正是这种竞态）。
+async function cacheCurrentBackground(canvas, W, H, theme, currentTime, logText) {
+  try {
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) return;
+    await Promise.all([
+      setConfig('background-canvas-width', W),
+      setConfig('background-canvas-height', H),
+      setConfig('background-canvas-data', blob),
+      setConfig('background-canvas-cache-time', currentTime),
+      setConfig('background-theme', theme)
+    ]);
+    console.log(logText);
+  } catch (err) {
+    console.warn('[Background] 缓存到 IndexedDB 失败:', err);
+  }
+}
+
 // async here is Fire-and-Forget
 async function drawBackground(status, theme = "light") {
   // 如果已有正在执行的绘制，记录最新的请求参数，等当前绘制完成后再执行
@@ -228,6 +248,8 @@ async function drawBackground(status, theme = "light") {
   // 确保最后能释放锁
   try {
     const canvas = document.getElementById('background-canvas');
+    // 部分页面可能没有背景画布，直接释放锁
+    if (!canvas) return;
     // 背景不要右键菜单啊
     // 使用css实现
     // canvas.addEventListener('contextmenu', (e) => {
@@ -253,7 +275,7 @@ async function drawBackground(status, theme = "light") {
 
     if (cachedBlob && +cachedW === W && +cachedH === H && (currentTime - cachedCacheTime < 10 * 60 * 1000) && !status && cachedTheme) {
       // 如果缓存存在且尺寸一致，就直接绘制缓存图
-      await new Promise((resolve) => {
+      const decoded = await new Promise((resolve) => {
         const img = new Image();
         const objectUrl = URL.createObjectURL(cachedBlob);
         img.src = objectUrl;
@@ -261,43 +283,36 @@ async function drawBackground(status, theme = "light") {
           URL.revokeObjectURL(objectUrl);
           ctx.clearRect(0, 0, W, H);
           ctx.drawImage(img, 0, 0);
-
-          if (cachedTheme !== theme) {
-            // 仅主题不同，只改变颜色
-            ctx.globalCompositeOperation = 'source-in';
-            ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
-            ctx.fillRect(0, 0, W, H);
-            ctx.globalCompositeOperation = 'source-over';
-
-            // toBlob 生成二进制数据，直接存入 IndexedDB
-            canvas.toBlob(blob => {
-              if (!blob) return;
-              Promise.all([
-                setConfig('background-canvas-width', W),
-                setConfig('background-canvas-height', H),
-                setConfig('background-canvas-data', blob),
-                setConfig('background-canvas-cache-time', currentTime),
-                setConfig('background-theme', theme)
-              ]).then(() => {
-                console.log('[Background] 背景主题色已更新并缓存');
-              }).catch(err => {
-                console.warn('[Background] 缓存到 IndexedDB 失败:', err);
-              });
-            }, 'image/png');
-          } else {
-            // console.log('[Background] 背景从缓存中加载');
-          }
-          resolve();
+          resolve(true);
         };
         img.onerror = () => {
           URL.revokeObjectURL(objectUrl);
-          resolve();
+          resolve(false);
         };
       });
-      return;
+
+      if (decoded) {
+        if (cachedTheme !== theme) {
+          // 仅主题不同，只改变颜色
+          ctx.globalCompositeOperation = 'source-in';
+          ctx.fillStyle = theme === 'light' ? '#000000' : '#ffffff';
+          ctx.fillRect(0, 0, W, H);
+          ctx.globalCompositeOperation = 'source-over';
+
+          // 在锁内完成快照并缓存，避免与后续重绘发生竞态
+          await cacheCurrentBackground(canvas, W, H, theme, currentTime, '[Background] 背景主题色已更新并缓存');
+        } else {
+          // console.log('[Background] 背景从缓存中加载');
+        }
+        return;
+      }
+      // 缓存图片解码失败，落到下方重新生成
+      console.warn('[Background] 缓存图片解码失败，重新生成');
     }
 
     console.log('[Background] 开始重新绘制背景');
+    // 防御性清空画布：即使上层逻辑变化，也绝不与上一次的背景叠加
+    ctx.clearRect(0, 0, W, H);
     const noise2D = new createNoise2D();
 
     // 设置参数
@@ -324,21 +339,8 @@ async function drawBackground(status, theme = "light") {
       drawContour(ctx, cellSize, cols, rows, heightMap, level, theme);
     }
 
-    // toBlob 生成二进制数据，直接存入 IndexedDB
-    canvas.toBlob(blob => {
-      if (!blob) return;
-      Promise.all([
-        setConfig('background-canvas-width', W),
-        setConfig('background-canvas-height', H),
-        setConfig('background-canvas-data', blob),
-        setConfig('background-canvas-cache-time', currentTime),
-        setConfig('background-theme', theme)
-      ]).then(() => {
-        console.log('[Background] 背景已缓存');
-      }).catch(err => {
-        console.warn('[Background] 缓存到 IndexedDB 失败:', err);
-      });
-    }, 'image/png');
+    // 在锁内完成快照并缓存，避免与后续重绘发生竞态
+    await cacheCurrentBackground(canvas, W, H, theme, currentTime, '[Background] 背景已缓存');
   } finally {
     // 释放锁，如果期间有新请求，用最新参数再绘制一次
     drawBackgroundLock = null;

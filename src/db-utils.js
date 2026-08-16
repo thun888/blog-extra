@@ -19,19 +19,25 @@ function openDB() {
 
 async function setConfig(key, value) {
   const db = await openDB();
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readwrite');
     tx.objectStore(storeName).put(value, key);
     tx.oncomplete = () => resolve();
+    // 事务失败时必须 reject，否则调用方将永远等待
+    tx.onabort = () => reject(tx.error || new Error('transaction aborted'));
+    tx.onerror = () => reject(tx.error);
   });
 }
 
 async function getConfig(key) {
   const db = await openDB();
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readonly');
     const request = tx.objectStore(storeName).get(key);
     request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    tx.onabort = () => reject(tx.error || new Error('transaction aborted'));
+    tx.onerror = () => reject(tx.error);
   });
 }
 
