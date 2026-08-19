@@ -472,9 +472,9 @@ console.image = function (url, scale) {
 console.warn("To verify that you are a human, please type whereegg() in the console.");
 
 function whereegg() {
-  console.image("https://onep.hzchu.top/mount/pic/myself/2025/10/findegg-68de998c3203f.png", 0.2);
+  console.image("https://gate.assets.hzchu.top/fs/old/files/mount/pic/myself/2025/10/findegg-68de998c3203f.png", 0.2);
   // TODO: 添加延迟，让用户有时间看到第一张图
-  console.image("https://onep.hzchu.top/mount/pic/myself/2025/10/eggshape-68dfbd07deb1b.png", 0.2);
+  console.image("https://gate.assets.hzchu.top/fs/old/files/mount/pic/myself/2025/10/eggshape-68dfbd07deb1b.png", 0.2);
 
   return "Where are my EGGS?";
 }
