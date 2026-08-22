@@ -1,9 +1,11 @@
 import { OverlayScrollbars } from 'overlayscrollbars';
 import { createNoise2D } from 'simplex-noise';
 import { setConfig, getConfig } from './db-utils.js';
+import tippy from 'tippy.js';
 
 import 'flying-pages';
-import 'nprogress/nprogress.css';
+import 'tippy.js/dist/tippy.css';
+import 'tippy.js/themes/light-border.css';
 // 默认已经有透明度动画了，不需要额外引入
 // import 'tippy.js/animations/scale.css';
 import 'hexo-math/dist/style.css';
@@ -16,6 +18,7 @@ import './style/copy-code.css';
 import './style/print-hide.css';
 import './style/tg-memos.scss';
 import './style/OverlayScrollbars.css';
+import './style/tip.css';
 /* 运行时间 */
 // var now=new Date();function createtime(){var grt=new Date("07/8/2021 23:30:00");now.setTime(now.getTime()+250);days=(now-grt)/1000/60/60/24;dnum=Math.floor(days);hours=(now-grt)/1000/60/60-(24*dnum);hnum=Math.floor(hours);if(String(hnum).length==1){hnum="0"+hnum}minutes=(now-grt)/1000/60-(24*60*dnum)-(60*hnum);mnum=Math.floor(minutes);if(String(mnum).length==1){mnum="0"+mnum}seconds=(now-grt)/1000-(24*60*60*dnum)-(60*60*hnum)-(60*mnum);snum=Math.round(seconds);if(String(snum).length==1){snum="0"+snum}document.getElementById("timeDate").innerHTML="已运行&nbsp"+dnum+"&nbsp天";document.getElementById("times").innerHTML=hnum+"&nbsp小时&nbsp"+mnum+"&nbsp分&nbsp"+snum+"&nbsp秒"}setInterval("createtime()",250);
 
@@ -548,15 +551,15 @@ function clearPageHistory() {
 }
 
 // 激活tippy
-// function activateTippy() {
-//   tippy('.annotated',{
-//     arrow: true,
-//     theme: "light-border",
-//     touch: true,
-//     trigger: "mouseenter focus click",
-//     interactive: true
-//   });
-// }
+function activateTippy() {
+  tippy('.annotated',{
+    arrow: true,
+    theme: "light-border",
+    touch: true,
+    trigger: "mouseenter focus click",
+    interactive: true
+  });
+}
 
 // 性能遥测，不用
 // window.addEventListener("DOMContentLoaded", () => {
@@ -731,6 +734,8 @@ document.addEventListener('DOMContentLoaded', initSingleLineCopy);
 document.addEventListener('DOMContentLoaded', insertLinkIcons);
 document.addEventListener('DOMContentLoaded', initOverlayScrollbars);
 document.addEventListener("DOMContentLoaded", addCodeBlockScrollbar);
+document.addEventListener("DOMContentLoaded", activateTippy);
+
 
 
 // 其他事件监听
