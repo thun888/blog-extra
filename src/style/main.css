@@ -28,12 +28,13 @@
 
 
 /* 文章内链接：为链接使用荧光笔下划线效果 */
-li:not([class]) a:not([class]),
+/* 已失效 */
+/* li:not([class]) a:not([class]),
 p:not([class]) a:not([class]),
 table a:not([class]) {
   padding-bottom: 0.1rem;
   background: linear-gradient(0, var(--theme-link-opa), var(--theme-link-opa)) no-repeat center bottom / 100% 40%;
-}
+} */
 
 /* 滚动条整体部分  使用OverlayScrollbars替代 */
 
